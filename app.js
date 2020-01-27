@@ -20,6 +20,12 @@ const itemsSchema = {
 //creatig a collection
 const Item = mongoose.model("Item", itemsSchema);
 
+const listSchema={
+  name:String,
+  items:[itemsSchema]
+};
+
+const List =mongoose.model("List",listSchema);
 
 //(3) in get, send items
 //(4) in post, get req.newItem and add it to db then return to (2)
@@ -38,9 +44,7 @@ app.get("/", function(req,res){
  //(2) load items=[] with db.items.name
  console.log("1");
  Item.find({},function(err, foundItems){
-   foundItems.forEach(function(element){
-   });
-  // console.log(foundItems);
+
   res.render("list", {kindOfDay:aDay , newListItems:foundItems});
   console.log("2");
  });
@@ -61,6 +65,26 @@ app.post("/delete" , function(req,res){
   let toDltId = req.body.checkbox;
   Item.findByIdAndRemove(toDltId , function(err){});
   res.redirect("/");
+});
+
+app.get("/:tdListTitle",function(req,res){
+  List.findOne({name:req.params.tdListTitle},function(err,result){
+    if(!result){
+      // create a new list
+      let customListName = req.params.tdListTitle;
+      const list = new List({
+        name: customListName,
+        items:[]
+      });
+      list.save();
+      res.redirect("/"+tdListTitle);
+    }
+    else{
+      // this list already exist, show it.
+      res.render("list", {kindOfDay:result.name , newListItems:result.items});
+    }
+  });
+
 });
 
 app.listen(3000, function(){
