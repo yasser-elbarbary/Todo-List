@@ -2,6 +2,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _=require("lodash");
 
 const app = express();
 
@@ -85,15 +86,29 @@ app.post("/",function(req,res){
 
 app.post("/delete" , function(req,res){
   let toDltId = req.body.checkbox;
-  Item.findByIdAndRemove(toDltId , function(err){});
-  res.redirect("/");
+  let listName =req.body.listName;
+  if(listName===getDay()){
+    Item.findByIdAndRemove(toDltId , function(err){});
+    res.redirect("/");
+  }
+  else{
+    List.findOneAndUpdate(
+      {name:listName}, //condition
+      {$pull:{items:{_id: toDltId}}}, //updates
+      function(err,foundList){
+        if(!err){
+          res.redirect("/"+listName);
+        }
+      }
+    );
+  }
 });
 
 app.get("/:tdListTitle",function(req,res){
-  List.findOne({name:req.params.tdListTitle},function(err,result){
+  List.findOne({name:_.capitalize(req.params.tdListTitle)},function(err,result){
     if(!result){
       // create a new list
-      let customListName = req.params.tdListTitle;
+      let customListName = _.capitalize(req.params.tdListTitle);
       const list = new List({
         name: customListName,
         items:[]
