@@ -29,17 +29,20 @@ const List =mongoose.model("List",listSchema);
 
 //(3) in get, send items
 //(4) in post, get req.newItem and add it to db then return to (2)
-
+var today=new Date();
+function getDay() {
+  var options = {
+    weekday: "long",
+    day:"numeric",
+    month:"long"
+  };
+  return today.toLocaleDateString("en-US", options);
+}
 
 app.get("/", function(req,res){
  // creatig date format
- var today=new Date();
- var options = {
-   weekday: "long",
-   day:"numeric",
-   month:"long"
- };
- var aDay= today.toLocaleDateString("en-US", options);
+
+ var aDay= getDay();
 
  //(2) load items=[] with db.items.name
  console.log("1");
@@ -54,11 +57,30 @@ app.get("/", function(req,res){
 
 
 app.post("/",function(req,res){
-  item= req.body.newItem;
+  itemName= req.body.newItem;
+  listName = req.body.button;
   //console.log(req.body.newItem);
-  var arr = [{ name:item }];
-  Item.insertMany(arr, function(error, docs) {});
-  res.redirect("/");
+  const item = new Item({
+    name: itemName
+  });
+  //if it is a eneric list then just save the item in items db
+  if(listName===getDay()){
+    item.save();
+    res.redirect("/");
+  }
+  else{
+    console.log(getDay());
+    console.log(listName);
+
+    // if itis a custom list save it in the custom db
+    console.log("adding  to custom list...");
+    List.findOne({name:listName},function(err,foundList){
+      foundList.items.push(item);
+      foundList.save();
+      console.log("adding  to custom list DONE");
+      res.redirect("/"+listName);
+    });
+  }
 });
 
 app.post("/delete" , function(req,res){
@@ -77,7 +99,7 @@ app.get("/:tdListTitle",function(req,res){
         items:[]
       });
       list.save();
-      res.redirect("/"+tdListTitle);
+      res.redirect("/"+req.params.tdListTitle);
     }
     else{
       // this list already exist, show it.
